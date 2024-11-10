@@ -19,7 +19,8 @@ fun TaskTextField(
     modifier: Modifier,
     label: String,
     maxLines: Int,
-    keyboardType: KeyboardType
+    keyboardType: KeyboardType,
+    singleLine: Boolean,
 ) {
     OutlinedTextField(
         value = value,
@@ -32,12 +33,14 @@ fun TaskTextField(
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = LightBlue,
             focusedLabelColor = LightBlue,
-            unfocusedLabelColor = Color.Gray,
+            unfocusedLabelColor = Color.LightGray,
             cursorColor = LightBlue
         ),
         shape = RoundedCornerShape(10.dp),
         keyboardOptions = KeyboardOptions(
             keyboardType = keyboardType
-        )
+        ),
+        singleLine = singleLine,
+
     )
 }
