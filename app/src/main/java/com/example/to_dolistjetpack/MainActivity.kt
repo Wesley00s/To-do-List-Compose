@@ -14,8 +14,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.to_dolistjetpack.ui.theme.TodoListJetPackTheme
+import com.example.to_dolistjetpack.view.auth.LoginView
+import com.example.to_dolistjetpack.view.auth.RegisterView
 import com.example.to_dolistjetpack.view.SaveTask
 import com.example.to_dolistjetpack.view.ToDoList
+import com.example.to_dolistjetpack.view.auth.PasswordRecoveryView
 
 class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
@@ -27,15 +30,25 @@ class MainActivity : ComponentActivity() {
             TodoListJetPackTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) {
                     val navController = rememberNavController()
+
                     NavHost(
                         navController = navController,
-                        startDestination = "home",
+                        startDestination = "login",
                     ) {
                         composable("home") {
                             ToDoList(navController)
                         }
                         composable("saveTask") {
                             SaveTask(navController)
+                        }
+                        composable("login") {
+                            LoginView(navController)
+                        }
+                        composable("register") {
+                            RegisterView(navController)
+                        }
+                        composable("passwordRecovery") {
+                            PasswordRecoveryView(navController)
                         }
                     }
                 }
