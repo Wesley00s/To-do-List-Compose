@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -51,6 +52,8 @@ android {
 
 dependencies {
 
+    implementation("com.google.firebase:firebase-analytics")
+    implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
     implementation (libs.androidx.constraintlayout.compose)
     implementation (libs.androidx.navigation.compose)
     implementation(libs.androidx.core.ktx)
