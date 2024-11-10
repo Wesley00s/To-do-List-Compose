@@ -4,16 +4,15 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -24,7 +23,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -61,7 +59,7 @@ import java.time.LocalDateTime
 fun ToDoList(
     navController: NavController,
 ) {
-    var menuExpanded by remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var isSearchVisible by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
@@ -80,150 +78,85 @@ fun ToDoList(
             },
         containerColor = Secondary,
         topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 colors = TopAppBarDefaults.mediumTopAppBarColors(
                     containerColor = Tertiary
                 ),
                 title = {
-                    Box(
-                        modifier = Modifier.fillMaxWidth(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (isSearchVisible) {
-                            OutlinedTextField(
-                                value = searchQuery,
-                                onValueChange = { searchQuery = it },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 2.dp)
-                                    .focusRequester(focusRequester)
-                                    .onFocusChanged { focusState ->
-                                        isTextFieldFocused = focusState.isFocused
-                                    },
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = Color.Transparent,
-                                    unfocusedBorderColor = Color.Transparent,
-                                    focusedTextColor = White,
-                                    focusedLabelColor = Color.LightGray,
-                                    unfocusedLabelColor = Color.LightGray,
-                                    cursorColor = White,
-                                ),
-                                label = {
-                                    Text(text = "Search tasks...")
+                    if (isSearchVisible) {
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 2.dp)
+                                .focusRequester(focusRequester)
+                                .onFocusChanged { focusState ->
+                                    isTextFieldFocused = focusState.isFocused
                                 },
-                                singleLine = true,
-                                maxLines = 1,
-                                textStyle = TextStyle(
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.LightGray
-                                ),
-                                trailingIcon = {
-                                    if (isTextFieldFocused) {
-                                        IconButton(onClick = {
-                                            searchQuery = ""
-                                            isSearchVisible = false
-                                            focusManager.clearFocus()
-                                        }) {
-                                            Icon(
-                                                imageVector = Icons.Default.Close,
-                                                contentDescription = "Clear",
-                                                tint = Color.White
-                                            )
-                                        }
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color.Transparent,
+                                unfocusedBorderColor = Color.Transparent,
+                                focusedTextColor = White,
+                                focusedLabelColor = Color.LightGray,
+                                unfocusedLabelColor = Color.LightGray,
+                                cursorColor = White,
+                            ),
+                            label = { Text("Search tasks...") },
+                            singleLine = true,
+                            trailingIcon = {
+                                if (isTextFieldFocused) {
+                                    IconButton(onClick = {
+                                        searchQuery = ""
+                                        isSearchVisible = false
+                                        focusManager.clearFocus()
+                                    }) {
+                                        Icon(
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = "Clear",
+                                            tint = Color.White
+                                        )
                                     }
                                 }
+                            }
+                        )
+                    } else {
+                        Text(
+                            text = "To-do List",
+                            style = TextStyle(
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.LightGray
                             )
-                        } else {
-                            Text(
-                                text = "To-Do List",
-                                style = TextStyle(
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.LightGray
-                                )
-                            )
-                        }
+                        )
                     }
                 },
                 actions = {
-                    IconButton(onClick = { menuExpanded = true }) {
-                        Image(
-                            imageVector = ImageVector.vectorResource(id = R.drawable.ic_more_vert),
-                            contentDescription = "More"
-                        )
+                    IconButton(onClick = { expanded = true }) {
+                        Image(ImageVector.vectorResource(id = R.drawable.ic_more_vert), contentDescription = "Menu")
                     }
-
                     DropdownMenu(
-                        modifier = Modifier
-                            .width(150.dp),
-                        expanded = menuExpanded,
-                        onDismissRequest = { menuExpanded = false }
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
                     ) {
                         DropdownMenuItem(
-                            text = {
-                                Text(
-                                    "Search",
-                                    style = TextStyle(
-                                        fontSize = 16.sp,
-                                        color = Color.Black,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                )
-                            },
+                            text = { Text("Search") },
                             onClick = {
-                                menuExpanded = false
+                                expanded = false
                                 isSearchVisible = !isSearchVisible
                             }
                         )
                         DropdownMenuItem(
-                            text = {
-                                Text(
-                                    "Profile",
-                                    style = TextStyle(
-                                        fontSize = 16.sp,
-                                        color = Color.Black,
-                                        fontWeight = FontWeight.Bold
-                                    )
-
-                                )
-                            },
-                            onClick = {
-                                menuExpanded = false
-                                isSearchVisible = !isSearchVisible
-                            }
+                            text = { Text("Profile") },
+                            onClick = { expanded = false }
                         )
                         DropdownMenuItem(
-                            text = {
-                                Text(
-                                    "About",
-                                    fontSize = 16.sp,
-                                    style = TextStyle(
-                                        color = Color.Black,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                )
-                            },
-                            onClick = {
-                                menuExpanded = false
-                                isSearchVisible = !isSearchVisible
-                            }
+                            text = { Text("About") },
+                            onClick = { expanded = false }
                         )
                         DropdownMenuItem(
-                            text = {
-                                Text(
-                                    "Logout",
-                                    fontSize = 16.sp,
-                                    style = TextStyle(
-                                        color = Color.Black,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                )
-                            },
-                            onClick = {
-                                menuExpanded = false
-                                isSearchVisible = !isSearchVisible
-                            }
+                            text = { Text("Logout") },
+                            onClick = { expanded = false }
                         )
                     }
                 }
@@ -231,9 +164,7 @@ fun ToDoList(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = {
-                    navController.navigate("saveTask")
-                },
+                onClick = { navController.navigate("saveTask") },
                 containerColor = Tertiary,
                 contentColor = Color.White
             ) {
@@ -243,7 +174,7 @@ fun ToDoList(
                 )
             }
         }
-    ) { paddingValues ->
+    ){ paddingValues ->
         Column(
             modifier = Modifier
                 .padding(paddingValues)
