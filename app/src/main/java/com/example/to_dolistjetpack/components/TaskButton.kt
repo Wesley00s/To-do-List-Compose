@@ -19,15 +19,19 @@ fun TaskButton(
     enabled: Boolean = true
 ) {
     Button(
-        onClick = {
-        },
-        modifier = modifier.height(40.dp),
+        onClick = onClick,
+        modifier = modifier.height(50.dp),
         enabled = enabled,
         colors = ButtonDefaults.buttonColors(
             containerColor = LightBlue,
             contentColor = Color.White
         ),
-        shape = RoundedCornerShape(10.dp)
+        shape = RoundedCornerShape(10.dp),
+        elevation = ButtonDefaults.buttonElevation(
+            defaultElevation = 10.dp,
+            pressedElevation = 5.dp,
+            disabledElevation = 0.dp
+        ),
     ) {
         Text(text = text)
     }
