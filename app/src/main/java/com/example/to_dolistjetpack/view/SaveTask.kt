@@ -1,7 +1,7 @@
 package com.example.to_dolistjetpack.view
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -9,12 +9,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -24,11 +27,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -37,7 +38,7 @@ import com.example.to_dolistjetpack.components.TaskTextField
 import com.example.to_dolistjetpack.ui.theme.MediumGreen
 import com.example.to_dolistjetpack.ui.theme.MediumRed
 import com.example.to_dolistjetpack.ui.theme.MediumYellow
-import com.example.to_dolistjetpack.ui.theme.PurpleGrey40
+import com.example.to_dolistjetpack.ui.theme.Tertiary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,27 +47,35 @@ fun SaveTask(
 ) {
     Scaffold(
         topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 colors = TopAppBarDefaults.mediumTopAppBarColors(
-                    containerColor = PurpleGrey40
+                    containerColor = Tertiary
                 ),
                 title = {
-                    Box(
-                        modifier = Modifier.fillMaxWidth(),
-                        contentAlignment = Alignment.Center
-                    ) {
+
                         Text(
-                            text = "Save Task",
+                            text = "Create Task",
                             style = TextStyle(
-                                fontSize = 26.sp,
+                                fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.LightGray
                             )
                         )
+
+                },
+                navigationIcon = {
+                    IconButton(onClick = {
+                        navController.popBackStack()
+                    }) {
+                        Image(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color.LightGray)
+                        )
                     }
-                }
+                },
             )
-        }
+        },
     ) { paddingValues ->
 
         var taskName by remember { mutableStateOf("") }
@@ -94,7 +103,8 @@ fun SaveTask(
                     modifier = Modifier.fillMaxWidth(),
                     label = "Task Name",
                     maxLines = 1,
-                    keyboardType = KeyboardType.Text
+                    keyboardType = KeyboardType.Text,
+                    singleLine = true
                 )
                 TaskTextField(
                     value = taskDescription,
@@ -106,7 +116,8 @@ fun SaveTask(
                         .height(150.dp),
                     label = "Task Description",
                     maxLines = 5,
-                    keyboardType = KeyboardType.Text
+                    keyboardType = KeyboardType.Text,
+                    singleLine = false
                 )
 
                 Row(
@@ -154,7 +165,7 @@ fun SaveTask(
 
                     },
                     enabled = taskName.isNotBlank(),
-                    text = "Salve",
+                    text = "Save",
                     modifier = Modifier.fillMaxWidth())
             }
         }
