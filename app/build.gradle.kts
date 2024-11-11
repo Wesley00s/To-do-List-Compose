@@ -52,8 +52,8 @@ android {
 
 dependencies {
 
-    implementation("com.google.firebase:firebase-analytics")
-    implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
+    implementation(libs.firebase.analytics)
+    implementation(platform(libs.firebase.bom))
     implementation (libs.androidx.constraintlayout.compose)
     implementation (libs.androidx.navigation.compose)
     implementation(libs.androidx.core.ktx)
@@ -64,6 +64,8 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.firebase.auth.ktx)
+    implementation(libs.firebase.database.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
