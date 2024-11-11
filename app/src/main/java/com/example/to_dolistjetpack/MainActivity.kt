@@ -45,7 +45,7 @@ class MainActivity : ComponentActivity() {
                             LoginView(navController)
                         }
                         composable("register") {
-                            RegisterView(navController)
+                            RegisterView(navController,this@MainActivity)
                         }
                         composable("passwordRecovery") {
                             PasswordRecoveryView(navController)

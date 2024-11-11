@@ -1,6 +1,8 @@
 package com.example.to_dolistjetpack.view.auth
 
+import android.content.Context
 import android.content.res.Configuration
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,18 +22,20 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -39,14 +43,23 @@ import com.example.to_dolistjetpack.R
 import com.example.to_dolistjetpack.components.TaskButton
 import com.example.to_dolistjetpack.components.TaskTextField
 import com.example.to_dolistjetpack.ui.theme.Tertiary
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
+import com.google.firebase.database.database
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterView(
-    navController: NavController
+    navController: NavController,
+    context: Context
 ) {
+    val auth = Firebase.auth
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+    var name by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
@@ -116,8 +129,10 @@ fun RegisterView(
 
                     )
                 TaskTextField(
-                    value = "",
-                    onValueChange = {},
+                    value = name,
+                    onValueChange = { nameString ->
+                        name = nameString
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     label = "Name",
                     maxLines = 1,
@@ -126,8 +141,10 @@ fun RegisterView(
                 )
                 Spacer(modifier = Modifier.size(10.dp))
                 TaskTextField(
-                    value = "",
-                    onValueChange = {},
+                    value = email,
+                    onValueChange = { emailString ->
+                        email = emailString
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     label = "Email",
                     maxLines = 1,
@@ -136,8 +153,10 @@ fun RegisterView(
                 )
                 Spacer(modifier = Modifier.size(10.dp))
                 TaskTextField(
-                    value = "",
-                    onValueChange = {},
+                    value = password,
+                    onValueChange = { passwordString ->
+                        password = passwordString
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     label = "Password",
                     maxLines = 1,
@@ -148,7 +167,24 @@ fun RegisterView(
                 Spacer(modifier = Modifier.size(25.dp))
                 TaskButton(
                     onClick = {
-                        navController.navigate("home")
+                        auth.createUserWithEmailAndPassword(
+                            email,
+                            password
+                        )
+                            .addOnCompleteListener { task ->
+                                if (task.isSuccessful) {
+                                    navController.navigate("home")
+                                    addUser(
+                                        "users",
+                                        context,
+                                        name,
+                                        email
+                                    )
+                                } else {
+                                    val errorMessage = task.exception?.message
+                                    Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+                                }
+                            }
                     },
                     text = "Register", modifier = Modifier.fillMaxWidth()
                 )
@@ -176,8 +212,25 @@ fun RegisterView(
     }
 }
 
-@Preview
-@Composable
-fun RegisterViewPreview() {
-    RegisterView(navController = NavController(LocalContext.current))
+fun addUser(
+    path: String,
+    context: Context,
+    name: String,
+    email: String,
+) {
+    val user = mapOf(
+        "name" to name,
+        "email" to email,
+    )
+    Firebase.database
+        .reference
+        .child(path)
+        .push()
+        .setValue(user)
+        .addOnSuccessListener {
+            Toast.makeText(context, "User added successfully", Toast.LENGTH_SHORT).show()
+        }
+        .addOnFailureListener {
+            Toast.makeText(context, "Failed to add user", Toast.LENGTH_SHORT).show()
+        }
 }
