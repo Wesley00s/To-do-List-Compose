@@ -1,18 +1,23 @@
 package com.example.to_dolistjetpack.view
 
+import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -25,10 +30,13 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -45,26 +53,46 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.to_dolistjetpack.R
-import com.example.to_dolistjetpack.enumeration.PriorityLevel
-import com.example.to_dolistjetpack.listItem.TaskItem
+import com.example.to_dolistjetpack.components.TaskItem
 import com.example.to_dolistjetpack.model.Task
 import com.example.to_dolistjetpack.ui.theme.Secondary
 import com.example.to_dolistjetpack.ui.theme.Tertiary
 import com.example.to_dolistjetpack.ui.theme.White
-import java.time.LocalDateTime
+import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.ktx.database
+import com.google.firebase.ktx.Firebase
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ToDoList(
     navController: NavController,
+    context: Context
 ) {
+    val userRef = Firebase.auth.currentUser
+    val datasource = Firebase.database.reference.child("users")
+    val taskList = remember { mutableStateListOf<Task>() }
     var expanded by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var isSearchVisible by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     var isTextFieldFocused by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(isSearchVisible) {
+        if (isSearchVisible) {
+            focusRequester.requestFocus()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        getTasksToFirebase(taskList, datasource, userRef) {
+            isLoading = false
+        }
+    }
 
     Scaffold(
         modifier = Modifier
@@ -87,6 +115,9 @@ fun ToDoList(
                         OutlinedTextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
+                            textStyle = TextStyle(
+                                fontSize = 14.sp
+                            ),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 2.dp)
@@ -102,7 +133,21 @@ fun ToDoList(
                                 unfocusedLabelColor = Color.LightGray,
                                 cursorColor = White,
                             ),
-                            label = { Text("Search tasks...") },
+                            placeholder = {
+                                Text(
+                                    text = "Search tasks...",
+                                    style = TextStyle(
+                                        color = Color.LightGray,
+                                        fontSize = 14.sp
+                                    )
+                                )
+                            },
+                            leadingIcon = {
+                                Image(
+                                    imageVector = ImageVector.vectorResource(id = R.drawable.ic_search),
+                                    contentDescription = "Search"
+                                )
+                            },
                             singleLine = true,
                             trailingIcon = {
                                 if (isTextFieldFocused) {
@@ -133,30 +178,61 @@ fun ToDoList(
                 },
                 actions = {
                     IconButton(onClick = { expanded = true }) {
-                        Image(ImageVector.vectorResource(id = R.drawable.ic_more_vert), contentDescription = "Menu")
+                        Image(
+                            ImageVector.vectorResource(id = R.drawable.ic_more_vert),
+                            contentDescription = "Menu"
+                        )
                     }
                     DropdownMenu(
                         expanded = expanded,
-                        onDismissRequest = { expanded = false }
+                        onDismissRequest = { expanded = false },
+                        modifier = Modifier.width(150.dp)
                     ) {
                         DropdownMenuItem(
                             text = { Text("Search") },
                             onClick = {
                                 expanded = false
                                 isSearchVisible = !isSearchVisible
+                            },
+                            leadingIcon = {
+                                Image(
+                                    ImageVector.vectorResource(id = R.drawable.ic_search),
+                                    contentDescription = "Search"
+                                )
                             }
                         )
                         DropdownMenuItem(
                             text = { Text("Profile") },
-                            onClick = { expanded = false }
+                            onClick = { expanded = false },
+                            leadingIcon = {
+                                Image(
+                                    ImageVector.vectorResource(id = R.drawable.ic_profile),
+                                    contentDescription = "Profile"
+                                )
+                            }
                         )
                         DropdownMenuItem(
                             text = { Text("About") },
-                            onClick = { expanded = false }
+                            onClick = { expanded = false },
+                            leadingIcon = {
+                                Image(
+                                    ImageVector.vectorResource(id = R.drawable.ic_about),
+                                    contentDescription = "About"
+                                )
+                            }
                         )
                         DropdownMenuItem(
                             text = { Text("Logout") },
-                            onClick = { expanded = false }
+                            onClick = {
+                                logout(navController)
+                                expanded = false
+                            },
+                            leadingIcon = {
+                                Image(
+                                    ImageVector.vectorResource(id = R.drawable.ic_logout),
+                                    contentDescription = "Logout"
+                                )
+                            }
                         )
                     }
                 }
@@ -174,67 +250,78 @@ fun ToDoList(
                 )
             }
         }
-    ){ paddingValues ->
-        Column(
-            modifier = Modifier
-                .padding(paddingValues)
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            val tasks: MutableList<Task> = mutableListOf(
-                Task(
-                    name = "Finalizar relatório do projeto",
-                    description = "Completar o relatório final e enviá-lo para o cliente",
-                    priority = PriorityLevel.HIGH,
-                    updateAt = LocalDateTime.now().minusHours(2),
-                    isDone = false
-                ),
-                Task(
-                    name = "Reunião com a equipe de desenvolvimento",
-                    description = "Discutir o progresso do sprint atual e próximos passos",
-                    priority = PriorityLevel.MEDIUM,
-                    updateAt = LocalDateTime.now(),
-                    isDone = false
-                ),
-                Task(
-                    name = "Revisar código do módulo de autenticação",
-                    description = "Verificar o código e refatorar para melhorar a segurança",
-                    priority = PriorityLevel.HIGH,
-                    updateAt = LocalDateTime.now().minusDays(1),
-                    isDone = false
-                ),
-                Task(
-                    name = "Atualizar documentação do projeto",
-                    description = "Adicionar novas funcionalidades e corrigir informações desatualizadas",
-                    priority = PriorityLevel.LOW,
-                    updateAt = LocalDateTime.now().minusDays(3),
-                    isDone = true
-                ),
-                Task(
-                    name = "Organizar arquivos e pastas no servidor",
-                    description = "Realizar limpeza de arquivos antigos e reestruturar diretórios",
-                    priority = PriorityLevel.NONE,
-                    updateAt = LocalDateTime.now().minusDays(5),
-                    isDone = false
-                ),
-                Task(
-                    name = "Planejar nova campanha de marketing",
-                    description = "Criar um plano para a próxima campanha no mês que vem",
-                    priority = PriorityLevel.MEDIUM,
-                    updateAt = LocalDateTime.now().minusHours(6),
-                    isDone = true
+    ) { paddingValues ->
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    color = Tertiary,
+                    modifier = Modifier.size(48.dp)
                 )
-            )
-            val filteredTasks = if (searchQuery.isNotEmpty()) {
-                tasks.filter { it.name?.contains(searchQuery, ignoreCase = true) == true }
-            } else {
-                tasks
             }
-            LazyColumn {
-                itemsIndexed(filteredTasks) { index, _ ->
-                    TaskItem(index, filteredTasks.toMutableList())
+        } else {
+
+            Column(
+                modifier = Modifier
+                    .padding(paddingValues)
+                    .fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                val filteredTasks = if (searchQuery.isNotEmpty()) {
+                    taskList.filter { it.name?.contains(searchQuery, ignoreCase = true) == true }
+                } else {
+                    taskList
+                }
+                LazyColumn {
+                    itemsIndexed(filteredTasks) { index, _ ->
+                        if (userRef != null) {
+                            TaskItem(
+                                navController = navController,
+                                index = index,
+                                taskList = taskList,
+                                taskId = filteredTasks[index].id.toString(),
+                                context = context,
+                                datasource = datasource,
+                                userId = userRef.uid
+                            )
+                        }
+                    }
                 }
             }
         }
     }
+}
+
+fun logout(navController: NavController) {
+    Firebase.auth.signOut()
+    navController.navigate("login") {
+        popUpTo("home") { inclusive = true }
+    }
+}
+
+fun getTasksToFirebase(
+    taskList: SnapshotStateList<Task>,
+    datasource: DatabaseReference,
+    userRef: FirebaseUser?,
+    onComplete: () -> Unit
+) {
+    userRef?.let { user ->
+        val userTasksRef = datasource.child(user.uid).child("tasks")
+        userTasksRef.get()
+            .addOnSuccessListener { dataSnapshot ->
+                taskList.clear()
+                dataSnapshot.children.forEach { taskSnapshot ->
+                    val task = taskSnapshot.getValue(Task::class.java)
+                    task?.let { taskList.add(it) }
+                }
+                onComplete()
+            }
+            .addOnFailureListener {
+                onComplete()
+            }
+    } ?: onComplete()
 }
