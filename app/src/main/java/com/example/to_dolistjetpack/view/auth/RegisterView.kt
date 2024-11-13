@@ -29,20 +29,28 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.to_dolistjetpack.R
 import com.example.to_dolistjetpack.components.TaskButton
 import com.example.to_dolistjetpack.components.TaskTextField
+import com.example.to_dolistjetpack.ui.theme.LightBlue
 import com.example.to_dolistjetpack.ui.theme.Tertiary
+import com.example.to_dolistjetpack.util.validateEmail
+import com.example.to_dolistjetpack.util.validatePassword
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.database.database
@@ -57,9 +65,14 @@ fun RegisterView(
     val auth = Firebase.auth
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
-    var name by remember { mutableStateOf("") }
+    var firstName by remember { mutableStateOf("") }
+    var lastName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    val isButtonActive = validateEmail(email)
+            && validatePassword(password)
+            && firstName.length >= 3
+            && lastName.length >= 3
 
     Scaffold(
         topBar = {
@@ -129,15 +142,36 @@ fun RegisterView(
 
                     )
                 TaskTextField(
-                    value = name,
-                    onValueChange = { nameString ->
-                        name = nameString
+                    value = firstName,
+                    onValueChange = { firstNameString ->
+                        firstName = firstNameString
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    label = "Name",
+                    label = "First Name",
                     maxLines = 1,
-                    keyboardType = KeyboardType.Email,
-                    singleLine = true
+                    keyboardType = KeyboardType.Text,
+                    singleLine = true,
+                    focusedBorderColor = LightBlue,
+                    leadingIcon = ImageVector.vectorResource(id = R.drawable.ic_name),
+                    isValid = { firstName.length >= 3 },
+                    errorMessage = "Enter a valid name"
+                )
+                Spacer(modifier = Modifier.size(10.dp))
+                TaskTextField(
+                    value = lastName,
+                    onValueChange = { latNameString ->
+                        lastName = latNameString
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = "Last Name",
+                    maxLines = 1,
+                    keyboardType = KeyboardType.Text,
+                    singleLine = true,
+                    focusedBorderColor = LightBlue,
+                    leadingIcon = ImageVector.vectorResource(id = R.drawable.ic_name),
+                    isValid = { lastName.length >= 3 },
+                    errorMessage = "Enter a valid name"
+
                 )
                 Spacer(modifier = Modifier.size(10.dp))
                 TaskTextField(
@@ -149,7 +183,11 @@ fun RegisterView(
                     label = "Email",
                     maxLines = 1,
                     keyboardType = KeyboardType.Email,
-                    singleLine = true
+                    singleLine = true,
+                    focusedBorderColor = LightBlue,
+                    isValid = { validateEmail(email) },
+                    errorMessage = "Enter a valid email"
+
                 )
                 Spacer(modifier = Modifier.size(10.dp))
                 TaskTextField(
@@ -159,9 +197,13 @@ fun RegisterView(
                     },
                     modifier = Modifier.fillMaxWidth(),
                     label = "Password",
+                    isPassword = true,
                     maxLines = 1,
                     keyboardType = KeyboardType.Password,
-                    singleLine = true
+                    singleLine = true,
+                    focusedBorderColor = LightBlue,
+                    isValid = { validatePassword(password) },
+                    errorMessage = "The password must be at least 6 characters"
                 )
 
                 Spacer(modifier = Modifier.size(25.dp))
@@ -177,7 +219,8 @@ fun RegisterView(
                                     addUser(
                                         "users",
                                         context,
-                                        name,
+                                        firstName,
+                                        lastName,
                                         email
                                     )
                                 } else {
@@ -186,7 +229,8 @@ fun RegisterView(
                                 }
                             }
                     },
-                    text = "Register", modifier = Modifier.fillMaxWidth()
+                    text = "Register", modifier = Modifier.fillMaxWidth(),
+                    enabled = isButtonActive
                 )
                 Spacer(modifier = Modifier.size(5.dp))
                 Button(
@@ -215,17 +259,20 @@ fun RegisterView(
 fun addUser(
     path: String,
     context: Context,
-    name: String,
+    firstName: String,
+    lastName: String,
     email: String,
 ) {
+    val userId = Firebase.auth.currentUser?.uid!!
     val user = mapOf(
-        "name" to name,
+        "firstName" to firstName,
+        "lastName" to lastName,
         "email" to email,
     )
     Firebase.database
         .reference
         .child(path)
-        .push()
+        .child(userId)
         .setValue(user)
         .addOnSuccessListener {
             Toast.makeText(context, "User added successfully", Toast.LENGTH_SHORT).show()
@@ -233,4 +280,10 @@ fun addUser(
         .addOnFailureListener {
             Toast.makeText(context, "Failed to add user", Toast.LENGTH_SHORT).show()
         }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun RegisterPreview() {
+    RegisterView(navController = rememberNavController(), context = LocalContext.current)
 }

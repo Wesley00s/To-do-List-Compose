@@ -1,9 +1,10 @@
 package com.example.to_dolistjetpack.view.auth
 
+import android.content.Context
 import android.content.res.Configuration
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,19 +22,21 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -41,14 +44,21 @@ import com.example.to_dolistjetpack.R
 import com.example.to_dolistjetpack.components.TaskButton
 import com.example.to_dolistjetpack.components.TaskTextField
 import com.example.to_dolistjetpack.ui.theme.Tertiary
+import com.example.to_dolistjetpack.util.validateEmail
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PasswordRecoveryView(
-    navController: NavController
+    navController: NavController,
+    context: Context
 ) {
+    val auth = Firebase.auth
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+    var emailError by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
@@ -123,22 +133,27 @@ fun PasswordRecoveryView(
                 )
                 Spacer(modifier = Modifier.size(20.dp))
                 TaskTextField(
-                    value = "",
-                    onValueChange = {},
+                    value = email,
+                    onValueChange = { emailString ->
+                        email = emailString
+                        emailError = ""
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     label = "Email",
                     maxLines = 1,
                     keyboardType = KeyboardType.Email,
-                    singleLine = true
+                    singleLine = true,
+                    isValid = { validateEmail(email) },
+                    errorMessage = "Enter a valid email"
                 )
                 Spacer(modifier = Modifier.size(20.dp))
 
                 TaskButton(
                     onClick = {
-                        navController.navigate("home")
-
+                        sendPasswordRecoveryEmail(context, email)
                     },
-                    text = "Send", modifier = Modifier.fillMaxWidth()
+                    text = "Send", modifier = Modifier.fillMaxWidth(),
+                    enabled = validateEmail(email),
                 )
 
             }
@@ -146,8 +161,16 @@ fun PasswordRecoveryView(
     }
 }
 
-@Preview
-@Composable
-fun ForgotPasswordViewPreview() {
-    PasswordRecoveryView(navController = NavController(LocalContext.current))
+fun sendPasswordRecoveryEmail(context: Context, email: String) {
+    val auth = Firebase.auth
+
+    auth.sendPasswordResetEmail(email)
+        .addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                Toast.makeText(context, "Password recovery email sent", Toast.LENGTH_SHORT).show()
+            } else {
+                val errorMessage = task.exception?.message
+                Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+            }
+        }
 }
