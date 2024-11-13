@@ -12,9 +12,14 @@ val Pink40 = Color(0xFF7D5260)
 
 val LightBlue = Color(0xFF0374A7)
 
-val MediumGreen = Color(0x9900FFA2)
+val MediumGreen = Color(0xFF008857)
 val MediumYellow = Color(0x99FFBF00)
 val MediumRed = Color(0x99FF0600)
 val White = Color(0xFFFFFFFF)
 val Secondary = Color(0xFFF7F7F7)
 val Tertiary = Color(0xFF212255)
+
+val HighPriorityColor = Color(0xFFD60E00)
+val MediumPriorityColor = Color(0xFFFFA500)
+val LowPriorityColor = Color(0xFF00BB16)
+val NonePriorityColor = Color(0xFF999999)
