@@ -5,6 +5,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -31,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -55,6 +57,7 @@ import androidx.navigation.NavController
 import com.example.to_dolistjetpack.R
 import com.example.to_dolistjetpack.components.TaskItem
 import com.example.to_dolistjetpack.model.Task
+import com.example.to_dolistjetpack.repository.UserRepository
 import com.example.to_dolistjetpack.ui.theme.Secondary
 import com.example.to_dolistjetpack.ui.theme.Tertiary
 import com.example.to_dolistjetpack.ui.theme.White
@@ -73,6 +76,7 @@ fun ToDoList(
 ) {
     val userRef = Firebase.auth.currentUser
     val datasource = Firebase.database.reference.child("users")
+    val userRepository = UserRepository(Firebase.database)
     val taskList = remember { mutableStateListOf<Task>() }
     var expanded by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
@@ -82,14 +86,26 @@ fun ToDoList(
     var isTextFieldFocused by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(true) }
 
+    val filteredTasks by remember {
+        derivedStateOf {
+            if (searchQuery.isNotEmpty()) {
+                taskList.filter { it.name?.contains(searchQuery, ignoreCase = true) == true }
+            } else {
+                taskList
+            }
+        }
+    }
+
     LaunchedEffect(isSearchVisible) {
         if (isSearchVisible) {
             focusRequester.requestFocus()
         }
     }
 
+    val bgColor = if (isSystemInDarkTheme()) Color.Black else Secondary
+
     LaunchedEffect(Unit) {
-        getTasksToFirebase(taskList, datasource, userRef) {
+        getTasksFromFirebase(taskList, datasource, userRef) {
             isLoading = false
         }
     }
@@ -104,7 +120,8 @@ fun ToDoList(
                     }
                 }
             },
-        containerColor = Secondary,
+        containerColor = bgColor,
+
         topBar = {
             CenterAlignedTopAppBar(
                 colors = TopAppBarDefaults.mediumTopAppBarColors(
@@ -203,7 +220,10 @@ fun ToDoList(
                         )
                         DropdownMenuItem(
                             text = { Text("Profile") },
-                            onClick = { expanded = false },
+                            onClick = {
+                                navController.navigate("profile")
+                                expanded = false
+                            },
                             leadingIcon = {
                                 Image(
                                     ImageVector.vectorResource(id = R.drawable.ic_profile),
@@ -212,19 +232,9 @@ fun ToDoList(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("About") },
-                            onClick = { expanded = false },
-                            leadingIcon = {
-                                Image(
-                                    ImageVector.vectorResource(id = R.drawable.ic_about),
-                                    contentDescription = "About"
-                                )
-                            }
-                        )
-                        DropdownMenuItem(
                             text = { Text("Logout") },
                             onClick = {
-                                logout(navController)
+                                userRepository.logout(navController, "home")
                                 expanded = false
                             },
                             leadingIcon = {
@@ -271,24 +281,17 @@ fun ToDoList(
                     .fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                val filteredTasks = if (searchQuery.isNotEmpty()) {
-                    taskList.filter { it.name?.contains(searchQuery, ignoreCase = true) == true }
-                } else {
-                    taskList
-                }
                 LazyColumn {
-                    itemsIndexed(filteredTasks) { index, _ ->
-                        if (userRef != null) {
-                            TaskItem(
-                                navController = navController,
-                                index = index,
-                                taskList = taskList,
-                                taskId = filteredTasks[index].id.toString(),
-                                context = context,
-                                datasource = datasource,
-                                userId = userRef.uid
-                            )
-                        }
+                    itemsIndexed(filteredTasks) { _, task ->
+                        TaskItem(
+                            navController = navController,
+                            taskList = taskList,
+                            taskId = task.id.toString(),
+                            context = context,
+                            datasource = datasource,
+                            userId = userRef?.uid.orEmpty()
+                        )
+
                     }
                 }
             }
@@ -296,14 +299,7 @@ fun ToDoList(
     }
 }
 
-fun logout(navController: NavController) {
-    Firebase.auth.signOut()
-    navController.navigate("login") {
-        popUpTo("home") { inclusive = true }
-    }
-}
-
-fun getTasksToFirebase(
+fun getTasksFromFirebase(
     taskList: SnapshotStateList<Task>,
     datasource: DatabaseReference,
     userRef: FirebaseUser?,
