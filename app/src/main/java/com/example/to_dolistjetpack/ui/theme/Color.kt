@@ -18,6 +18,7 @@ val MediumRed = Color(0x99FF0600)
 val White = Color(0xFFFFFFFF)
 val Secondary = Color(0xFFF7F7F7)
 val Tertiary = Color(0xFF212255)
+val DarkCardColor = Color(0xFF232730)
 
 val HighPriorityColor = Color(0xFFD60E00)
 val MediumPriorityColor = Color(0xFFFFA500)
