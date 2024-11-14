@@ -2,10 +2,10 @@ package com.example.to_dolistjetpack.components
 
 import android.content.Context
 import android.os.Build
-import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -21,31 +21,39 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.to_dolistjetpack.R
 import com.example.to_dolistjetpack.enumeration.PriorityLevel
 import com.example.to_dolistjetpack.model.Task
+import com.example.to_dolistjetpack.repository.TaskRepository
+import com.example.to_dolistjetpack.ui.theme.DarkCardColor
 import com.example.to_dolistjetpack.ui.theme.HighPriorityColor
 import com.example.to_dolistjetpack.ui.theme.LightBlue
 import com.example.to_dolistjetpack.ui.theme.LowPriorityColor
 import com.example.to_dolistjetpack.ui.theme.MediumPriorityColor
 import com.example.to_dolistjetpack.ui.theme.NonePriorityColor
-import com.example.to_dolistjetpack.ui.theme.White
+import com.example.to_dolistjetpack.util.deleteTaskAlertDialog
+import com.example.to_dolistjetpack.util.vibrateOnClick
 import com.google.firebase.database.DatabaseReference
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -53,17 +61,27 @@ import java.time.format.DateTimeFormatter
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun TaskItem(
-    navController: NavController,
-    index: Int,
+    navController: NavController?,
     taskList: SnapshotStateList<Task>,
     taskId: String,
     context: Context,
-    datasource: DatabaseReference,
+    datasource: DatabaseReference?,
     userId: String
 ) {
-    val task = taskList[index]
+//    val task = taskList.find { it.id.toString() == taskId } ?: return
+    val task = taskList.find { it.id.toString() == taskId } ?: Task(
+        id = taskId,
+        name = "Tarefa Exemplo",
+        description = "Descrição da tarefa exemplo.",
+        priority = PriorityLevel.MEDIUM,
+        isDone = false,
+        updateAt = "2023-11-10T15:30:00"
+    )
     var isChecked by remember { mutableStateOf(task.isDone) }
-
+    val taskRepository = datasource?.let { TaskRepository(it) }
+    val cardColor = if (isSystemInDarkTheme()) DarkCardColor else Color.White
+    val taskNameColor = if (isSystemInDarkTheme()) Color.LightGray else Color.Black
+    val taskdescColor = if (isSystemInDarkTheme()) Color.LightGray else Color.Black
     val priorityLevel: String = when (task.priority) {
         PriorityLevel.LOW -> "Low"
         PriorityLevel.MEDIUM -> "Medium"
@@ -71,6 +89,8 @@ fun TaskItem(
         PriorityLevel.NONE -> "None"
         else -> "None"
     }
+
+    val cardScale = if (isChecked == true) 0.92f else 1.0f
 
     val indicatorColor = when (priorityLevel) {
         "Low" -> LowPriorityColor
@@ -83,16 +103,17 @@ fun TaskItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .scale(cardScale)
             .padding(8.dp)
             .clickable {
-                navController.navigate("editTask/$taskId")
+                navController?.navigate("editTask/$taskId")
             },
         elevation = CardDefaults.cardElevation(
             defaultElevation = 0.dp
         ),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = White
+            containerColor = cardColor
         ),
     ) {
         Column(
@@ -100,37 +121,37 @@ fun TaskItem(
                 .padding(top = 5.dp, bottom = 5.dp, end = 10.dp)
                 .fillMaxWidth(),
         ) {
-            Row {
+            Row (
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 10.dp)
+            ){
                 Checkbox(
                     checked = isChecked!!,
                     onCheckedChange = {
                         isChecked = it
                         task.isDone = it
+                        vibrateOnClick(context)
                     },
                     modifier = Modifier
-                        .scale(0.8f)
-                        .size(20.dp)
-                        .padding(start = 20.dp, end = 10.dp, top = 15.dp),
-                    colors = CheckboxDefaults.colors(
+                        .scale(1.2f).align(Alignment.CenterVertically)
+                    ,colors = CheckboxDefaults.colors(
                         checkedColor = LightBlue,
                         uncheckedColor = Color.Gray,
                         checkmarkColor = Color.White
                     )
                 )
-                completeTask(datasource, userId, taskId, task) { isEdited ->
-                    if (isEdited) {
-                        taskList[index] = task
-                    }
-                }
+                taskRepository?.completeTask(userId, taskId, task)
                 Column {
                     Text(
                         text = task.name.toString(),
-                        modifier = Modifier.padding(vertical = 5.dp, horizontal = 20.dp),
+                        modifier = Modifier.padding(top = 10.dp, start = 20.dp, end = 20.dp),
                         style = TextStyle(
-                            fontSize = 16.sp,
+                            fontSize = 18.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = if (isChecked as Boolean) Color.Gray else Color.Black,
-                            textDecoration = if (isChecked as Boolean) TextDecoration.LineThrough else TextDecoration.None
+                            color = if (isChecked as Boolean) Color.Gray else taskNameColor,
+                            textDecoration = if (isChecked as Boolean) TextDecoration.LineThrough else TextDecoration.None,
+                            fontStyle = if (isChecked as Boolean) FontStyle.Italic else FontStyle.Normal
                         )
                     )
 
@@ -153,12 +174,15 @@ fun TaskItem(
                     Text(
                         text = task.description.toString(),
                         style = TextStyle(
-                            fontSize = 14.sp,
+                            fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (isChecked as Boolean) Color.Gray else Color.Black,
-                            textDecoration = if (isChecked as Boolean) TextDecoration.LineThrough else TextDecoration.None
+                            color = if (isChecked as Boolean) Color.Gray else taskdescColor,
+                            textDecoration = if (isChecked as Boolean) TextDecoration.LineThrough else TextDecoration.None,
+                            fontStyle = if (isChecked as Boolean) FontStyle.Italic else FontStyle.Normal
                         ),
-                        modifier = Modifier.padding(start = 20.dp)
+                        modifier = Modifier.padding(start = 20.dp, end = 10.dp, top = 5.dp),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
 
                     Row(
@@ -184,9 +208,15 @@ fun TaskItem(
 
                         IconButton(
                             onClick = {
-                                deleteTask(context, datasource, userId, taskId) { isDeleted ->
-                                    if (isDeleted) {
-                                        taskList.removeAt(index)
+                                if (taskRepository != null) {
+                                    if (navController != null) {
+                                        deleteTaskAlertDialog(
+                                            context,
+                                            userId,
+                                            taskId,
+                                            taskRepository,
+                                            taskList
+                                        )
                                     }
                                 }
                             },
@@ -206,43 +236,28 @@ fun TaskItem(
     }
 }
 
-fun deleteTask(
-    context: Context,
-    datasource: DatabaseReference,
-    userId: String,
-    taskId: String,
-    onDeleted: (Boolean) -> Unit
-) {
-    val taskRef = datasource.child(userId).child("tasks").child(taskId)
-    taskRef.removeValue().addOnCompleteListener { task ->
-        if (task.isSuccessful) {
-            Toast.makeText(context, "Task deleted", Toast.LENGTH_SHORT).show()
-            onDeleted(true)
-        } else {
-            Toast.makeText(context, "Failed to delete task", Toast.LENGTH_SHORT).show()
-            onDeleted(false)
-        }
-    }
-}
 
-fun completeTask(
-    datasource: DatabaseReference,
-    userId: String,
-    taskId: String,
-    task: Task,
-    onEdited: (Boolean) -> Unit
-) {
-    val taskRef = datasource.child(userId).child("tasks").child(taskId)
-
-    val updates = mapOf(
-        "done" to task.isDone,
+@RequiresApi(Build.VERSION_CODES.O)
+@Preview(showBackground = true)
+@Composable
+fun TaskItemPreview() {
+    TaskItem(
+        navController = null,
+        taskList = remember {
+            mutableStateListOf(
+                Task(
+                    id = "-OBaxc1_bcEAI0JcUm51",
+                    name = "Estudar Compose",
+                    description = "Ler documentação e fazer tutoriais.",
+                    priority = PriorityLevel.HIGH,
+                    isDone = false,
+                    updateAt = "2023-11-10T15:30:00"
+                )
+            )
+        },
+        taskId = "-OBaxc1_bcEAI0JcUm51",
+        context = LocalContext.current,
+        datasource = null, // Sem dependência de Firebase para o Preview
+        userId = "user123"
     )
-
-    taskRef.updateChildren(updates).addOnCompleteListener {
-        if (it.isSuccessful) {
-            onEdited(true)
-        } else {
-            onEdited(false)
-        }
-    }
 }
