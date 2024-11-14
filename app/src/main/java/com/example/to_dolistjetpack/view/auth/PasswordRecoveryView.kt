@@ -151,6 +151,7 @@ fun PasswordRecoveryView(
                 TaskButton(
                     onClick = {
                         sendPasswordRecoveryEmail(context, email)
+                        navController.popBackStack()
                     },
                     text = "Send", modifier = Modifier.fillMaxWidth(),
                     enabled = validateEmail(email),
