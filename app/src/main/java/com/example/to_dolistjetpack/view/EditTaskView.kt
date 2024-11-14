@@ -1,6 +1,5 @@
 package com.example.to_dolistjetpack.view
 
-import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
@@ -16,6 +15,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
@@ -25,6 +26,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -45,14 +47,15 @@ import com.example.to_dolistjetpack.components.TaskButton
 import com.example.to_dolistjetpack.components.TaskTextField
 import com.example.to_dolistjetpack.enumeration.PriorityLevel
 import com.example.to_dolistjetpack.model.Task
+import com.example.to_dolistjetpack.repository.TaskRepository
 import com.example.to_dolistjetpack.ui.theme.LightBlue
 import com.example.to_dolistjetpack.ui.theme.MediumGreen
 import com.example.to_dolistjetpack.ui.theme.MediumRed
 import com.example.to_dolistjetpack.ui.theme.MediumYellow
 import com.example.to_dolistjetpack.ui.theme.Tertiary
+import com.example.to_dolistjetpack.util.deleteTaskAlertDialog
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
-import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.database
 import java.time.LocalDateTime
 
@@ -61,18 +64,22 @@ import java.time.LocalDateTime
 @Composable
 fun EditTask(
     navController: NavController,
-    context: Context,
     taskId: String
 ) {
-    // Resetar os estados quando o taskId mudar
     var taskName by remember(key1 = taskId) { mutableStateOf("") }
     var taskDescription by remember(key1 = taskId) { mutableStateOf("") }
     var selectedPriority by remember(key1 = taskId) { mutableStateOf<String?>(null) }
 
     val datasource = Firebase.database.reference.child("users")
     val userId = Firebase.auth.currentUser?.uid!!
+    val taskRepository = TaskRepository(datasource)
 
-    // Carregar os dados da task quando o Composable for inicializado ou o taskId mudar
+    val taskList = remember { mutableStateListOf<Task>() }
+
+    LaunchedEffect(Unit) {
+        getTasksFromFirebase(taskList, datasource, Firebase.auth.currentUser) { }
+    }
+
     LaunchedEffect(taskId) {
         datasource.child(userId).child("tasks").child(taskId).get()
             .addOnSuccessListener { dataSnapshot ->
@@ -118,8 +125,31 @@ fun EditTask(
                         )
                     }
                 },
-            )
+
+                )
         },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = {
+                    deleteTaskAlertDialog(
+                        context = navController.context,
+                        userId = userId,
+                        taskId = taskId,
+                        taskRepository = taskRepository,
+                        taskList = taskList
+                    ) {
+                        navController.popBackStack()
+                    }
+                },
+                containerColor = Tertiary,
+                contentColor = Color.White
+            ) {
+                Icon(
+                    imageVector = ImageVector.vectorResource(id = R.drawable.ic_delete),
+                    contentDescription = "Delete Task"
+                )
+            }
+        }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -219,7 +249,7 @@ fun EditTask(
                             isDone = false,
                             updateAt = LocalDateTime.now().toString()
                         )
-                        editTask(datasource, userId, taskId, task) { isEdited ->
+                        taskRepository.editTask(userId, taskId, task) { isEdited ->
                             if (isEdited) {
                                 navController.popBackStack()
                             }
@@ -234,28 +264,3 @@ fun EditTask(
     }
 }
 
-fun editTask(
-    datasource: DatabaseReference,
-    userId: String,
-    taskId: String,
-    task: Task,
-    onEdited: (Boolean) -> Unit
-) {
-    val taskRef = datasource.child(userId).child("tasks").child(taskId)
-
-    val updates = mapOf(
-        "name" to task.name,
-        "description" to task.description,
-        "priority" to task.priority,
-        "isDone" to task.isDone,
-        "updateAt" to task.updateAt
-    )
-
-    taskRef.updateChildren(updates).addOnCompleteListener {
-        if (it.isSuccessful) {
-            onEdited(true)
-        } else {
-            onEdited(false)
-        }
-    }
-}
