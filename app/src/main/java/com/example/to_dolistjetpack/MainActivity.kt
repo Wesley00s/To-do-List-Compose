@@ -15,6 +15,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.to_dolistjetpack.ui.theme.TodoListJetPackTheme
 import com.example.to_dolistjetpack.view.EditTask
+import com.example.to_dolistjetpack.view.ProfileView
 import com.example.to_dolistjetpack.view.SaveTask
 import com.example.to_dolistjetpack.view.SplashScreen
 import com.example.to_dolistjetpack.view.ToDoList
@@ -47,7 +48,10 @@ class MainActivity : ComponentActivity() {
                             ToDoList(navController, this@MainActivity)
                         }
                         composable("saveTask") {
-                            SaveTask(navController, this@MainActivity)
+                            SaveTask(navController)
+                        }
+                        composable("profile") {
+                            ProfileView(navController, this@MainActivity)
                         }
                         composable("login") {
                             LoginView(navController, this@MainActivity)
@@ -61,9 +65,10 @@ class MainActivity : ComponentActivity() {
                         composable("editTask/{taskId}") { backStackEntry ->
                             val taskId = backStackEntry.arguments?.getString("taskId")
                             if (taskId != null) {
-                                EditTask(navController, this@MainActivity, taskId)
+                                EditTask(navController, taskId)
                             }
                         }
+
                     }
                 }
             }
