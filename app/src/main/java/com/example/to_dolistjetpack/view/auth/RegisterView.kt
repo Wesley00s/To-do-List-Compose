@@ -47,6 +47,8 @@ import androidx.navigation.compose.rememberNavController
 import com.example.to_dolistjetpack.R
 import com.example.to_dolistjetpack.components.TaskButton
 import com.example.to_dolistjetpack.components.TaskTextField
+import com.example.to_dolistjetpack.model.User
+import com.example.to_dolistjetpack.repository.UserRepository
 import com.example.to_dolistjetpack.ui.theme.LightBlue
 import com.example.to_dolistjetpack.ui.theme.Tertiary
 import com.example.to_dolistjetpack.util.validateEmail
@@ -63,6 +65,8 @@ fun RegisterView(
     context: Context
 ) {
     val auth = Firebase.auth
+    val userRepository = UserRepository(Firebase.database)
+
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
     var firstName by remember { mutableStateOf("") }
@@ -216,12 +220,14 @@ fun RegisterView(
                             .addOnCompleteListener { task ->
                                 if (task.isSuccessful) {
                                     navController.navigate("home")
-                                    addUser(
+                                    userRepository.createUser(
                                         "users",
                                         context,
-                                        firstName,
-                                        lastName,
-                                        email
+                                        User(
+                                            firstName = firstName,
+                                            lastName = lastName,
+                                            email = email
+                                        )
                                     )
                                 } else {
                                     val errorMessage = task.exception?.message
@@ -254,36 +260,4 @@ fun RegisterView(
             }
         }
     }
-}
-
-fun addUser(
-    path: String,
-    context: Context,
-    firstName: String,
-    lastName: String,
-    email: String,
-) {
-    val userId = Firebase.auth.currentUser?.uid!!
-    val user = mapOf(
-        "firstName" to firstName,
-        "lastName" to lastName,
-        "email" to email,
-    )
-    Firebase.database
-        .reference
-        .child(path)
-        .child(userId)
-        .setValue(user)
-        .addOnSuccessListener {
-            Toast.makeText(context, "User added successfully", Toast.LENGTH_SHORT).show()
-        }
-        .addOnFailureListener {
-            Toast.makeText(context, "Failed to add user", Toast.LENGTH_SHORT).show()
-        }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun RegisterPreview() {
-    RegisterView(navController = rememberNavController(), context = LocalContext.current)
 }
