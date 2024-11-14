@@ -1,6 +1,5 @@
 package com.example.to_dolistjetpack.view
 
-import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
@@ -43,6 +42,7 @@ import com.example.to_dolistjetpack.components.TaskButton
 import com.example.to_dolistjetpack.components.TaskTextField
 import com.example.to_dolistjetpack.enumeration.PriorityLevel
 import com.example.to_dolistjetpack.model.Task
+import com.example.to_dolistjetpack.repository.TaskRepository
 import com.example.to_dolistjetpack.ui.theme.LightBlue
 import com.example.to_dolistjetpack.ui.theme.MediumGreen
 import com.example.to_dolistjetpack.ui.theme.MediumRed
@@ -50,7 +50,6 @@ import com.example.to_dolistjetpack.ui.theme.MediumYellow
 import com.example.to_dolistjetpack.ui.theme.Tertiary
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
-import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.database
 import java.time.LocalDateTime
 
@@ -58,13 +57,12 @@ import java.time.LocalDateTime
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SaveTask(
-    navController: NavController,
-    context: Context
+    navController: NavController
 ) {
+    val taskRepository = TaskRepository(datasource = Firebase.database.reference.child("users"))
     var taskName by remember { mutableStateOf("") }
     var taskDescription by remember { mutableStateOf("") }
     var selectedPriority by remember { mutableStateOf<String?>(null) }
-    val datasource = Firebase.database.reference.child("users")
     val userId = Firebase.auth.currentUser?.uid!!
 
     Scaffold(
@@ -198,7 +196,7 @@ fun SaveTask(
                             updateAt = LocalDateTime.now().toString(),
                             isDone = false
                         )
-                        createTask(datasource, userId, newTask)
+                        taskRepository.createTask(userId, newTask)
                         navController.popBackStack()
                     },
                     enabled = taskName.isNotBlank(),
@@ -208,10 +206,4 @@ fun SaveTask(
             }
         }
     }
-}
-
-fun createTask(datasource: DatabaseReference, userId: String, task: Task) {
-    val userTasksRef = datasource.child(userId).child("tasks").push()
-    task.id = userTasksRef.key
-    userTasksRef.setValue(task)
 }
