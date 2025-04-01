@@ -55,8 +55,8 @@ import com.example.to_dolistjetpack.ui.theme.MediumYellow
 import com.example.to_dolistjetpack.ui.theme.Tertiary
 import com.example.to_dolistjetpack.util.deleteTaskAlertDialog
 import com.google.firebase.Firebase
-import com.google.firebase.auth.auth
-import com.google.firebase.database.database
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.firestore
 import java.time.LocalDateTime
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -70,23 +70,26 @@ fun EditTask(
     var taskDescription by remember(key1 = taskId) { mutableStateOf("") }
     var selectedPriority by remember(key1 = taskId) { mutableStateOf<String?>(null) }
 
-    val datasource = Firebase.database.reference.child("users")
-    val userId = Firebase.auth.currentUser?.uid!!
-    val taskRepository = TaskRepository(datasource)
-
+    val userId = FirebaseAuth.getInstance().currentUser?.uid!!
+    val firestore = Firebase.firestore
+    val taskRepository = TaskRepository(firestore)
     val taskList = remember { mutableStateListOf<Task>() }
 
     LaunchedEffect(Unit) {
-        getTasksFromFirebase(taskList, datasource, Firebase.auth.currentUser) { }
+        getTasksFromFirebase(taskList, firestore, FirebaseAuth.getInstance().currentUser) { }
     }
 
     LaunchedEffect(taskId) {
-        datasource.child(userId).child("tasks").child(taskId).get()
-            .addOnSuccessListener { dataSnapshot ->
-                val task = dataSnapshot.getValue(Task::class.java)
+        firestore.collection("users")
+            .document(userId)
+            .collection("tasks")
+            .document(taskId)
+            .get()
+            .addOnSuccessListener { document ->
+                val task = document.toObject(Task::class.java)
                 task?.let {
-                    taskName = it.name ?: ""
-                    taskDescription = it.description ?: ""
+                    taskName = it.name
+                    taskDescription = it.description
                     selectedPriority = when (it.priority) {
                         PriorityLevel.LOW -> "low"
                         PriorityLevel.MEDIUM -> "medium"
