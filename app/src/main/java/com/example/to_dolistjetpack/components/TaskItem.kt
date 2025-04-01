@@ -21,7 +21,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -31,14 +30,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -54,7 +51,7 @@ import com.example.to_dolistjetpack.ui.theme.MediumPriorityColor
 import com.example.to_dolistjetpack.ui.theme.NonePriorityColor
 import com.example.to_dolistjetpack.util.deleteTaskAlertDialog
 import com.example.to_dolistjetpack.util.vibrateOnClick
-import com.google.firebase.database.DatabaseReference
+import com.google.firebase.firestore.FirebaseFirestore
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -65,11 +62,10 @@ fun TaskItem(
     taskList: SnapshotStateList<Task>,
     taskId: String,
     context: Context,
-    datasource: DatabaseReference?,
+    firestore: FirebaseFirestore,
     userId: String
 ) {
-//    val task = taskList.find { it.id.toString() == taskId } ?: return
-    val task = taskList.find { it.id.toString() == taskId } ?: Task(
+    val task = taskList.find { it.id == taskId } ?: Task(
         id = taskId,
         name = "Tarefa Exemplo",
         description = "Descrição da tarefa exemplo.",
@@ -78,7 +74,7 @@ fun TaskItem(
         updateAt = "2023-11-10T15:30:00"
     )
     var isChecked by remember { mutableStateOf(task.isDone) }
-    val taskRepository = datasource?.let { TaskRepository(it) }
+    val taskRepository = remember { TaskRepository(firestore) }
     val cardColor = if (isSystemInDarkTheme()) DarkCardColor else Color.White
     val taskNameColor = if (isSystemInDarkTheme()) Color.LightGray else Color.Black
     val taskdescColor = if (isSystemInDarkTheme()) Color.LightGray else Color.Black
@@ -90,7 +86,7 @@ fun TaskItem(
         else -> "None"
     }
 
-    val cardScale = if (isChecked == true) 0.92f else 1.0f
+    val cardScale = if (isChecked) 0.92f else 1.0f
 
     val indicatorColor = when (priorityLevel) {
         "Low" -> LowPriorityColor
@@ -127,10 +123,11 @@ fun TaskItem(
                     .padding(start = 10.dp)
             ){
                 Checkbox(
-                    checked = isChecked!!,
+                    checked = isChecked,
                     onCheckedChange = {
                         isChecked = it
                         task.isDone = it
+                        taskRepository.completeTask(userId, taskId, it)
                         vibrateOnClick(context)
                     },
                     modifier = Modifier
@@ -141,7 +138,6 @@ fun TaskItem(
                         checkmarkColor = Color.White
                     )
                 )
-                taskRepository?.completeTask(userId, taskId, task)
                 Column {
                     Text(
                         text = task.name.toString(),
@@ -149,9 +145,9 @@ fun TaskItem(
                         style = TextStyle(
                             fontSize = 18.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = if (isChecked as Boolean) Color.Gray else taskNameColor,
-                            textDecoration = if (isChecked as Boolean) TextDecoration.LineThrough else TextDecoration.None,
-                            fontStyle = if (isChecked as Boolean) FontStyle.Italic else FontStyle.Normal
+                            color = if (isChecked) Color.Gray else taskNameColor,
+                            textDecoration = if (isChecked) TextDecoration.LineThrough else TextDecoration.None,
+                            fontStyle = if (isChecked) FontStyle.Italic else FontStyle.Normal
                         )
                     )
 
@@ -176,9 +172,9 @@ fun TaskItem(
                         style = TextStyle(
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (isChecked as Boolean) Color.Gray else taskdescColor,
-                            textDecoration = if (isChecked as Boolean) TextDecoration.LineThrough else TextDecoration.None,
-                            fontStyle = if (isChecked as Boolean) FontStyle.Italic else FontStyle.Normal
+                            color = if (isChecked) Color.Gray else taskdescColor,
+                            textDecoration = if (isChecked) TextDecoration.LineThrough else TextDecoration.None,
+                            fontStyle = if (isChecked) FontStyle.Italic else FontStyle.Normal
                         ),
                         modifier = Modifier.padding(start = 20.dp, end = 10.dp, top = 5.dp),
                         maxLines = 1,
@@ -208,16 +204,14 @@ fun TaskItem(
 
                         IconButton(
                             onClick = {
-                                if (taskRepository != null) {
-                                    if (navController != null) {
-                                        deleteTaskAlertDialog(
-                                            context,
-                                            userId,
-                                            taskId,
-                                            taskRepository,
-                                            taskList
-                                        )
-                                    }
+                                if (navController != null) {
+                                    deleteTaskAlertDialog(
+                                        context,
+                                        userId,
+                                        taskId,
+                                        taskRepository,
+                                        taskList
+                                    )
                                 }
                             },
                             modifier = Modifier
@@ -234,30 +228,4 @@ fun TaskItem(
             }
         }
     }
-}
-
-
-@RequiresApi(Build.VERSION_CODES.O)
-@Preview(showBackground = true)
-@Composable
-fun TaskItemPreview() {
-    TaskItem(
-        navController = null,
-        taskList = remember {
-            mutableStateListOf(
-                Task(
-                    id = "-OBaxc1_bcEAI0JcUm51",
-                    name = "Estudar Compose",
-                    description = "Ler documentação e fazer tutoriais.",
-                    priority = PriorityLevel.HIGH,
-                    isDone = false,
-                    updateAt = "2023-11-10T15:30:00"
-                )
-            )
-        },
-        taskId = "-OBaxc1_bcEAI0JcUm51",
-        context = LocalContext.current,
-        datasource = null, // Sem dependência de Firebase para o Preview
-        userId = "user123"
-    )
 }

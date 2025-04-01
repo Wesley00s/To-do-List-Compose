@@ -46,11 +46,8 @@ import com.example.to_dolistjetpack.ui.theme.MediumRed
 import com.example.to_dolistjetpack.ui.theme.Tertiary
 import com.example.to_dolistjetpack.util.deleteAccountAlertDialog
 import com.google.firebase.Firebase
-import com.google.firebase.auth.auth
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.ValueEventListener
-import com.google.firebase.database.database
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.firestore
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,42 +55,39 @@ fun ProfileView(
     navController: NavController,
     context: Context,
 ) {
-    val userRepository = UserRepository(Firebase.database)
+    val firestore = Firebase.firestore
+    val userRepository = UserRepository(firestore)
     var firstName by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
     var userEmail by remember { mutableStateOf("") }
-    val databaseReference = Firebase.database.reference.child("users")
-    val user = Firebase.auth.currentUser
+    val user = FirebaseAuth.getInstance().currentUser
     val userId = user?.uid
-    val userRef = userId?.let { databaseReference.child(it) }
 
     LaunchedEffect(userId) {
-        if (userRef != null) {
-            userRef.addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    firstName =
-                        snapshot.child("firstName").getValue(String::class.java) ?: "Name not found"
-                    lastName = snapshot.child("lastName").getValue(String::class.java)
-                        ?: "Last Name not found"
-                    userEmail =
-                        snapshot.child("email").getValue(String::class.java) ?: "Email not found"
+        if (userId != null) {
+            firestore.collection("users")
+                .document(userId)
+                .get()
+                .addOnSuccessListener { document ->
+                    if (document.exists()) {
+                        firstName = document.getString("firstName") ?: "Nome não encontrado"
+                        lastName = document.getString("lastName") ?: "Sobrenome não encontrado"
+                        userEmail = document.getString("email") ?: user.email ?: "Email não encontrado"
+                    }
                 }
-
-                override fun onCancelled(error: DatabaseError) {
+                .addOnFailureListener { exception ->
                     Toast.makeText(
                         context,
-                        "Erro ao obter perfil: ${error.message}",
+                        "Erro ao obter perfil: ${exception.message}",
                         Toast.LENGTH_SHORT
                     ).show()
                 }
-            })
         } else {
             navController.navigate("login") {
                 popUpTo("profile") { inclusive = true }
             }
         }
     }
-
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(

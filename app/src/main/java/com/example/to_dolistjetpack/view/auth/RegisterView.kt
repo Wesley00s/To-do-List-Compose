@@ -32,18 +32,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.example.to_dolistjetpack.R
 import com.example.to_dolistjetpack.components.TaskButton
 import com.example.to_dolistjetpack.components.TaskTextField
@@ -54,8 +51,8 @@ import com.example.to_dolistjetpack.ui.theme.Tertiary
 import com.example.to_dolistjetpack.util.validateEmail
 import com.example.to_dolistjetpack.util.validatePassword
 import com.google.firebase.Firebase
-import com.google.firebase.auth.auth
-import com.google.firebase.database.database
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.firestore
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -64,8 +61,9 @@ fun RegisterView(
     navController: NavController,
     context: Context
 ) {
-    val auth = Firebase.auth
-    val userRepository = UserRepository(Firebase.database)
+    val auth = FirebaseAuth.getInstance()
+    val firestore = Firebase.firestore
+    val userRepository = UserRepository(firestore)
 
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
@@ -221,7 +219,6 @@ fun RegisterView(
                                 if (task.isSuccessful) {
                                     navController.navigate("home")
                                     userRepository.createUser(
-                                        "users",
                                         context,
                                         User(
                                             firstName = firstName,

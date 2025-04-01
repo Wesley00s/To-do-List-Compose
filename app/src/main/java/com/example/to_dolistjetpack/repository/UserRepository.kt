@@ -5,37 +5,28 @@ import android.widget.Toast
 import androidx.navigation.NavController
 import com.example.to_dolistjetpack.model.User
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.ktx.Firebase
+import com.google.firebase.firestore.FirebaseFirestore
 
-class UserRepository(private val database: FirebaseDatabase) {
+class UserRepository(private val firestore: FirebaseFirestore) {
+
     fun createUser(
-        path: String,
         context: Context,
-        user: User,
+        user: User
     ) {
-        val userId = Firebase.auth.currentUser?.uid!!
-        val userMap = mapOf(
-            "firstName" to user.firstName,
-            "lastName" to user.lastName,
-            "email" to user.email,
-        )
-        database
-            .reference
-            .child(path)
-            .child(userId)
-            .setValue(userMap)
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val userRef = firestore.collection("users").document(userId)
+
+        userRef.set(user)
             .addOnSuccessListener {
-                Toast.makeText(context, "User added successfully", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Perfil criado com sucesso", Toast.LENGTH_SHORT).show()
             }
             .addOnFailureListener {
-                Toast.makeText(context, "Failed to add user", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Erro ao criar perfil", Toast.LENGTH_SHORT).show()
             }
     }
 
     fun logout(navController: NavController, currentRoute: String) {
-        Firebase.auth.signOut()
+        FirebaseAuth.getInstance().signOut()
         navController.navigate("login") {
             popUpTo(currentRoute) { inclusive = true }
         }
@@ -43,22 +34,27 @@ class UserRepository(private val database: FirebaseDatabase) {
 
     fun deleteAccount(
         navController: NavController,
+        context: Context,
         currentRoute: String,
     ) {
         val user = FirebaseAuth.getInstance().currentUser
-        val userId = user?.uid
-        val databaseReference = database.reference.child("users").child(userId ?: "")
+        val userId = user?.uid ?: return
 
-        databaseReference.removeValue().addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-                user?.delete()?.addOnCompleteListener { deleteTask ->
-                    if (deleteTask.isSuccessful) {
+        firestore.collection("users").document(userId)
+            .delete()
+            .addOnSuccessListener {
+                user.delete()
+                    .addOnSuccessListener {
                         navController.navigate("login") {
                             popUpTo(currentRoute) { inclusive = true }
                         }
                     }
-                }
+                    .addOnFailureListener {
+                        Toast.makeText(context, "An error ocurred while deleting account", Toast.LENGTH_SHORT).show()
+                    }
             }
-        }
+            .addOnFailureListener {
+                Toast.makeText(context, "An error ocurred while deleting data", Toast.LENGTH_SHORT).show()
+            }
     }
 }

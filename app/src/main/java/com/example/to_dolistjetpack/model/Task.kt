@@ -3,10 +3,10 @@ package com.example.to_dolistjetpack.model
 import com.example.to_dolistjetpack.enumeration.PriorityLevel
 
 data class Task(
-    var id: String? = null,
-    val name: String? = null,
-    val description: String? = null,
+    var id: String = "",
+    val name: String = "",
+    val description: String = "",
     val priority: PriorityLevel? = null,
     val updateAt: String = "",
-    var isDone: Boolean? = null
+    var isDone: Boolean = false
 )
