@@ -50,6 +50,7 @@ fun deleteAccountAlertDialog(
         .setPositiveButton("Yes") { _, _ ->
             userRepository.deleteAccount(
                 navController,
+                context,
                 currentRoute,
             )
         }
