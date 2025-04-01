@@ -45,8 +45,7 @@ import com.example.to_dolistjetpack.components.TaskButton
 import com.example.to_dolistjetpack.components.TaskTextField
 import com.example.to_dolistjetpack.ui.theme.Tertiary
 import com.example.to_dolistjetpack.util.validateEmail
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
+import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,7 +53,6 @@ fun PasswordRecoveryView(
     navController: NavController,
     context: Context
 ) {
-    val auth = Firebase.auth
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
     var emailError by remember { mutableStateOf("") }
@@ -163,7 +161,7 @@ fun PasswordRecoveryView(
 }
 
 fun sendPasswordRecoveryEmail(context: Context, email: String) {
-    val auth = Firebase.auth
+    val auth = FirebaseAuth.getInstance()
 
     auth.sendPasswordResetEmail(email)
         .addOnCompleteListener { task ->
