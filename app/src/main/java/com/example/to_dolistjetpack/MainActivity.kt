@@ -48,7 +48,7 @@ class MainActivity : ComponentActivity() {
                             ToDoList(navController, this@MainActivity)
                         }
                         composable("saveTask") {
-                            SaveTask(navController)
+                            SaveTask(navController, this@MainActivity)
                         }
                         composable("profile") {
                             ProfileView(navController, this@MainActivity)
