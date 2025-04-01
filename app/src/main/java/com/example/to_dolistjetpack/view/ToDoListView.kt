@@ -61,10 +61,10 @@ import com.example.to_dolistjetpack.repository.UserRepository
 import com.example.to_dolistjetpack.ui.theme.Secondary
 import com.example.to_dolistjetpack.ui.theme.Tertiary
 import com.example.to_dolistjetpack.ui.theme.White
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.ktx.database
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -74,9 +74,9 @@ fun ToDoList(
     navController: NavController,
     context: Context
 ) {
-    val userRef = Firebase.auth.currentUser
-    val datasource = Firebase.database.reference.child("users")
-    val userRepository = UserRepository(Firebase.database)
+    val userRef = FirebaseAuth.getInstance().currentUser
+    val firestore = Firebase.firestore
+    val userRepository = UserRepository(firestore)
     val taskList = remember { mutableStateListOf<Task>() }
     var expanded by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
@@ -89,7 +89,7 @@ fun ToDoList(
     val filteredTasks by remember {
         derivedStateOf {
             if (searchQuery.isNotEmpty()) {
-                taskList.filter { it.name?.contains(searchQuery, ignoreCase = true) == true }
+                taskList.filter { it.name.contains(searchQuery, ignoreCase = true) }
             } else {
                 taskList
             }
@@ -105,7 +105,7 @@ fun ToDoList(
     val bgColor = if (isSystemInDarkTheme()) Color.Black else Secondary
 
     LaunchedEffect(Unit) {
-        getTasksFromFirebase(taskList, datasource, userRef) {
+        getTasksFromFirebase(taskList, firestore, userRef) {
             isLoading = false
         }
     }
@@ -288,7 +288,7 @@ fun ToDoList(
                             taskList = taskList,
                             taskId = task.id.toString(),
                             context = context,
-                            datasource = datasource,
+                            firestore = firestore,
                             userId = userRef?.uid.orEmpty()
                         )
 
@@ -301,17 +301,20 @@ fun ToDoList(
 
 fun getTasksFromFirebase(
     taskList: SnapshotStateList<Task>,
-    datasource: DatabaseReference,
+    firestore: FirebaseFirestore,
     userRef: FirebaseUser?,
     onComplete: () -> Unit
 ) {
     userRef?.let { user ->
-        val userTasksRef = datasource.child(user.uid).child("tasks")
-        userTasksRef.get()
-            .addOnSuccessListener { dataSnapshot ->
+        firestore.collection("users")
+            .document(user.uid)
+            .collection("tasks")
+            .get()
+            .addOnSuccessListener { querySnapshot ->
                 taskList.clear()
-                dataSnapshot.children.forEach { taskSnapshot ->
-                    val task = taskSnapshot.getValue(Task::class.java)
+                querySnapshot.documents.forEach { document ->
+                    val task = document.toObject(Task::class.java)
+                    task?.id = document.id
                     task?.let { taskList.add(it) }
                 }
                 onComplete()
