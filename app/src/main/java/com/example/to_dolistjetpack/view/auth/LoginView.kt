@@ -48,8 +48,7 @@ import com.example.to_dolistjetpack.ui.theme.LightBlue
 import com.example.to_dolistjetpack.ui.theme.Tertiary
 import com.example.to_dolistjetpack.util.validateEmail
 import com.example.to_dolistjetpack.util.validatePassword
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
+import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,7 +56,7 @@ fun LoginView(
     navController: NavController?,
     context: Context
 ) {
-    val auth = Firebase.auth
+    val auth = FirebaseAuth.getInstance()
     var isRedirected by remember { mutableStateOf(false) }
     auth.currentUser?.let {
         if (!isRedirected) {
