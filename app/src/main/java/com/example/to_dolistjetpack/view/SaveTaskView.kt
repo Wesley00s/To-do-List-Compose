@@ -1,5 +1,6 @@
 package com.example.to_dolistjetpack.view
 
+import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
@@ -48,22 +49,24 @@ import com.example.to_dolistjetpack.ui.theme.MediumGreen
 import com.example.to_dolistjetpack.ui.theme.MediumRed
 import com.example.to_dolistjetpack.ui.theme.MediumYellow
 import com.example.to_dolistjetpack.ui.theme.Tertiary
-import com.google.firebase.Firebase
-import com.google.firebase.auth.auth
-import com.google.firebase.database.database
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import java.time.LocalDateTime
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SaveTask(
-    navController: NavController
+    navController: NavController,
+    context: Context
 ) {
-    val taskRepository = TaskRepository(datasource = Firebase.database.reference.child("users"))
+    val firestore = FirebaseFirestore.getInstance()
+
+    val taskRepository = TaskRepository(firestore)
     var taskName by remember { mutableStateOf("") }
     var taskDescription by remember { mutableStateOf("") }
     var selectedPriority by remember { mutableStateOf<String?>(null) }
-    val userId = Firebase.auth.currentUser?.uid!!
+    val userId = FirebaseAuth.getInstance().currentUser?.uid!!
 
     Scaffold(
         topBar = {
@@ -97,7 +100,6 @@ fun SaveTask(
             )
         },
     ) { paddingValues ->
-
         Column(
             modifier = Modifier
                 .padding(paddingValues)
@@ -196,7 +198,7 @@ fun SaveTask(
                             updateAt = LocalDateTime.now().toString(),
                             isDone = false
                         )
-                        taskRepository.createTask(userId, newTask)
+                        taskRepository.createTask(context, userId, newTask)
                         navController.popBackStack()
                     },
                     enabled = taskName.isNotBlank(),
