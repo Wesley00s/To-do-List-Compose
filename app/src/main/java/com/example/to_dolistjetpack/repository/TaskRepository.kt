@@ -1,7 +1,6 @@
 package com.example.to_dolistjetpack.repository
 
 import android.content.Context
-import android.util.Log
 import android.widget.Toast
 import com.example.to_dolistjetpack.model.Task
 import com.google.firebase.firestore.FirebaseFirestore
