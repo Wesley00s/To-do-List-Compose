@@ -18,6 +18,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.to_dolistjetpack.R
 import kotlinx.coroutines.delay
@@ -51,7 +52,7 @@ fun SplashScreen(onTimeout: () -> Unit) {
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Image(
-                painter = painterResource(id = R.drawable.list),
+                painter = painterResource(id = R.drawable.logo),
                 contentDescription = "List Icon",
                 modifier = Modifier
                     .height(height)
@@ -59,4 +60,10 @@ fun SplashScreen(onTimeout: () -> Unit) {
             )
         }
     }
+}
+
+@Preview
+@Composable
+private fun SplashPreview() {
+    SplashScreen(onTimeout = {})
 }

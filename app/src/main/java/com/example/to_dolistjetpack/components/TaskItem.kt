@@ -117,11 +117,11 @@ fun TaskItem(
                 .padding(top = 5.dp, bottom = 5.dp, end = 10.dp)
                 .fillMaxWidth(),
         ) {
-            Row (
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(start = 10.dp)
-            ){
+            ) {
                 Checkbox(
                     checked = isChecked,
                     onCheckedChange = {
@@ -131,8 +131,9 @@ fun TaskItem(
                         vibrateOnClick(context)
                     },
                     modifier = Modifier
-                        .scale(1.2f).align(Alignment.CenterVertically)
-                    ,colors = CheckboxDefaults.colors(
+                        .scale(1.2f)
+                        .align(Alignment.CenterVertically),
+                    colors = CheckboxDefaults.colors(
                         checkedColor = LightBlue,
                         uncheckedColor = Color.Gray,
                         checkmarkColor = Color.White
@@ -140,7 +141,7 @@ fun TaskItem(
                 )
                 Column {
                     Text(
-                        text = task.name.toString(),
+                        text = task.name,
                         modifier = Modifier.padding(top = 10.dp, start = 20.dp, end = 20.dp),
                         style = TextStyle(
                             fontSize = 18.sp,
@@ -168,7 +169,7 @@ fun TaskItem(
                     }
 
                     Text(
-                        text = task.description.toString(),
+                        text = task.description,
                         style = TextStyle(
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
@@ -177,7 +178,7 @@ fun TaskItem(
                             fontStyle = if (isChecked) FontStyle.Italic else FontStyle.Normal
                         ),
                         modifier = Modifier.padding(start = 20.dp, end = 10.dp, top = 5.dp),
-                        maxLines = 1,
+                        maxLines = 5,
                         overflow = TextOverflow.Ellipsis
                     )
 

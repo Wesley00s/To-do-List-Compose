@@ -184,7 +184,7 @@ fun ToDoList(
                         )
                     } else {
                         Text(
-                            text = "To-do List",
+                            text = "Final Countdown",
                             style = TextStyle(
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,

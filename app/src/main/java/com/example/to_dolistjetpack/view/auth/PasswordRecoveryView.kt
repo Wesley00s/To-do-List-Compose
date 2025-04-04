@@ -112,7 +112,7 @@ fun PasswordRecoveryView(
             ) {
 
                 Image(
-                    painter = painterResource(id = R.drawable.list),
+                    painter = painterResource(id = R.drawable.logo),
                     contentDescription = "List Icon",
                     modifier = Modifier
                         .size(imageSize)
