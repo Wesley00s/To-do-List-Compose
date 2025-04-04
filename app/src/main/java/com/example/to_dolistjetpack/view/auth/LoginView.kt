@@ -117,7 +117,7 @@ fun LoginView(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Image(
-                painter = painterResource(id = R.drawable.list),
+                painter = painterResource(id = R.drawable.logo),
                 contentDescription = "List Icon",
                 modifier = Modifier
                     .size(if (isPortrait) 120.dp else 180.dp)
@@ -125,7 +125,7 @@ fun LoginView(
                 contentScale = ContentScale.Fit
             )
             Text(
-                text = "Welcome back to our To-do List!",
+                text = "Welcome back to our Final Countdown!",
                 style = TextStyle(
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
