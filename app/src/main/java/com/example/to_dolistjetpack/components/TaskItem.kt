@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -99,6 +100,7 @@ fun TaskItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .height(180.dp)
             .scale(cardScale)
             .padding(8.dp)
             .clickable {
@@ -176,9 +178,7 @@ fun TaskItem(
                             textDecoration = if (isChecked) TextDecoration.LineThrough else TextDecoration.None,
                             fontStyle = if (isChecked) FontStyle.Italic else FontStyle.Normal
                         ),
-                        modifier = Modifier.padding(start = 20.dp, end = 10.dp, top = 5.dp),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        modifier = Modifier.padding(start = 20.dp, end = 10.dp, top = 5.dp)
                     )
 
                     Row(

@@ -38,6 +38,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -54,7 +55,7 @@ import com.google.firebase.auth.FirebaseAuth
 @Composable
 fun LoginView(
     navController: NavController?,
-    context: Context
+    context: Context?
 ) {
     val auth = FirebaseAuth.getInstance()
     var isRedirected by remember { mutableStateOf(false) }
@@ -230,4 +231,10 @@ fun LoginView(
             }
         }
     }
+}
+
+@Preview
+@Composable
+private fun LoginViewPreview() {
+    LoginView(navController = null, context = null)
 }

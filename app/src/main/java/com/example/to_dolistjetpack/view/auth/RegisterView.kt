@@ -124,7 +124,7 @@ fun RegisterView(
             ) {
 
                 Image(
-                    painter = painterResource(id = R.drawable.list),
+                    painter = painterResource(id = R.drawable.logo),
                     contentDescription = "List Icon",
                     modifier = Modifier
                         .size(imageSize)
@@ -133,7 +133,7 @@ fun RegisterView(
                 )
 
                 Text(
-                    text = "We are happy to you have join our \n To-do List \uD83D\uDE00",
+                    text = "We are happy to you have join our \n Final Countdown \uD83D\uDE00",
                     style = TextStyle(
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
